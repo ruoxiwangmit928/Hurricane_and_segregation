@@ -2,7 +2,7 @@
 
 This repository contains the analysis code for the paper:
 
-> **[Paper Title]**  
+> **[Divergence between residential and experienced social mixing during hurricane displacement]**  
 > [Authors] · [Journal/Conference] · [Year]
 
 We examine how hurricane evacuations reshape income-based social mixing in affected communities, using large-scale mobility data from Hurricane Harvey (Houston, TX, 2017) and Hurricane Ian (Florida, 2022). The analysis covers three main components: (1) evacuation identification, (2) place- and individual-level social mixing computation, and (3) hypothesis testing on host population behavioral responses.
@@ -44,11 +44,7 @@ Identifies evacuation episodes from daily GPS displacement traces using a rollin
 ### 2 · Social Mixing Computation
 
 **`place_social_mixing.py`**  
-Computes weekly place-level income social mixing for all visited POIs (Florida, Hurricane Ian 2022). Visitors are weighted by dwell time; social mixing is defined as:
-
-$$\text{Mixing} = 1 - \frac{2}{3} \sum_{q \in \{Q1,Q2,Q3,Q4\}} \left| s_q - 0.25 \right|$$
-
-where $s_q$ is the share of total dwell time attributable to income quartile $q$. A value of 1 indicates perfect mixing; 0 indicates complete segregation.
+Computes weekly place-level income social mixing for all visited POIs (Florida, Hurricane Ian 2022). Visitors are weighted by dwell time.
 
 **`individual_social_mixing.py`**  
 Computes the individual-level counterpart: each person's social mixing score is the dwell-time-weighted average of the place-level income exposure across all their visited POIs in a given week. Only active users (≥ 10 visit days per month) are included.
@@ -95,21 +91,7 @@ Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level ba
 
 ## Data
 
-This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. Intermediate aggregated outputs (e.g., weekly social mixing CSVs) may be available upon reasonable request.
-
-| File | Description |
-|------|-------------|
-| `individual_minimum_distance.txt` | Daily minimum distance from home per device |
-| `device_id_cbg_10_days.csv` | Home CBG assignment per device |
-| `displacement_status.csv` | Daily displacement status (output of Step 1) |
-| `displacement_periods.csv` | Evacuation episode table (output of Step 1) |
-| `evacuees_poi_visits.csv` | POI visit records for identified evacuees |
-| `match_results_remove_home_30/` | Daily POI visit files for all users |
-| `mobility_<week>.txt` | Weekly mobility summaries (rg, distance, visits, dwell time) |
-| `cbg_statistics.csv` | Evacuee inflow counts per CBG |
-| `fl_cbg_income_quantile.csv` | Income quartile assignment per device (Florida) |
-| `geo_change_features.gpkg` | CBG-level demographic and mobility features |
-| `GH_poi_list.csv` / `taxonomy.csv` | POI metadata and category taxonomy |
+This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. 
 
 ---
 
