@@ -88,23 +88,7 @@ Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level ba
 
 ## Data
 
-This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. Intermediate aggregated outputs (e.g., weekly social mixing CSVs) may be available upon reasonable request.
-
-| File | Description |
-|------|-------------|
-| `individual_minimum_distance.txt` | Daily minimum distance from home per device |
-| `device_id_cbg_10_days.csv` | Home CBG assignment per device |
-| `displacement_status.csv` | Daily displacement status (output of Step 1) |
-| `displacement_periods.csv` | Evacuation episode table (output of Step 1) |
-| `evacuees_poi_visits.csv` | POI visit records for identified evacuees |
-| `match_results_remove_home_30/` | Daily POI visit files for all users |
-| `mobility_<week>.txt` | Weekly mobility summaries (rg, distance, visits, dwell time) |
-| `cbg_statistics.csv` | Evacuee inflow counts per CBG |
-| `fl_cbg_income_quantile.csv` | Income quartile assignment per device (Florida) |
-| `geo_change_features.gpkg` | CBG-level demographic and mobility features |
-| `GH_poi_list.csv` / `taxonomy.csv` | POI metadata and category taxonomy |
-
----
+This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. 
 
 ## Requirements
 
