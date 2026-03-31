@@ -2,8 +2,7 @@
 
 This repository contains the analysis code for the paper:
 
-> **[Paper Title]**  
-> [Authors] · [Journal/Conference] · [Year]
+> **Divergence between residential and experienced social mixing during hurricane displacement**  
 
 We examine how hurricane evacuations reshape income-based social mixing in affected communities, using large-scale mobility data from Hurricane Harvey (Houston, TX, 2017) and Hurricane Ian (Florida, 2022). The analysis covers three main components: (1) evacuation identification, (2) place- and individual-level social mixing computation, and (3) hypothesis testing on host population behavioral responses.
 
