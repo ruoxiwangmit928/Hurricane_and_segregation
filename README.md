@@ -2,7 +2,7 @@
 
 This repository contains the analysis code for the paper:
 
-> **Divergence between residential and experienced social mixing during hurricane displacement**  
+> **[Paper Title]**  
 > [Authors] · [Journal/Conference] · [Year]
 
 We examine how hurricane evacuations reshape income-based social mixing in affected communities, using large-scale mobility data from Hurricane Harvey (Houston, TX, 2017) and Hurricane Ian (Florida, 2022). The analysis covers three main components: (1) evacuation identification, (2) place- and individual-level social mixing computation, and (3) hypothesis testing on host population behavioral responses.
@@ -73,14 +73,21 @@ Tests whether places visited by evacuees exhibit higher income social mixing tha
 
 ## Social Mixing Index
 
-The social mixing index used throughout is adapted from the dissimilarity index:
+Following established exposure-based measures (Moro et al. 2021; Yabe et al. 2023), we define social mixing at two levels.
 
-$$\text{Mixing} = 1 - \frac{2}{3} \sum_{q=1}^{4} \left| s_q - 0.25 \right|$$
+**Place-level social mixing.** The social mixing of encounters at place $\alpha$ is:
 
-| Value | Interpretation |
-|-------|----------------|
-| 1.0   | Perfect mixing — all income groups equally represented |
-| 0.0   | Complete segregation — only one income group present |
+$$M_{\alpha} = 1 - \frac{2}{3} \sum_q \left| \tau_{q\alpha} - \frac{1}{4} \right|$$
+
+where $\tau_{q\alpha}$ is the share of total dwell time at place $\alpha$ attributable to income quartile $q$. $M_{\alpha} = 0$ indicates that all encounters involve individuals from a single income quartile; $M_{\alpha} = 1$ indicates perfectly balanced exposure across all four groups.
+
+**Individual-level social mixing.** Each individual's exposure to income quartile $q$ is computed as a dwell-time-weighted average of place-level income shares across all visited places:
+
+$$\tau_{iq} = \sum_{\alpha} \tau_{i\alpha} \, \tau_{q\alpha}$$
+
+where $\tau_{i\alpha}$ is the proportion of individual $i$'s total dwell time spent at place $\alpha$. The experienced social mixing of individual $i$ is then:
+
+$$M_i = 1 - \frac{2}{3} \sum_q \left| \tau_{iq} - \frac{1}{4} \right|$$
 
 Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level based on ACS median household income.
 
@@ -88,7 +95,21 @@ Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level ba
 
 ## Data
 
-This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. 
+This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. Intermediate aggregated outputs (e.g., weekly social mixing CSVs) may be available upon reasonable request.
+
+| File | Description |
+|------|-------------|
+| `individual_minimum_distance.txt` | Daily minimum distance from home per device |
+| `device_id_cbg_10_days.csv` | Home CBG assignment per device |
+| `displacement_status.csv` | Daily displacement status (output of Step 1) |
+| `displacement_periods.csv` | Evacuation episode table (output of Step 1) |
+| `evacuees_poi_visits.csv` | POI visit records for identified evacuees |
+| `match_results_remove_home_30/` | Daily POI visit files for all users |
+| `mobility_<week>.txt` | Weekly mobility summaries (rg, distance, visits, dwell time) |
+| `cbg_statistics.csv` | Evacuee inflow counts per CBG |
+| `fl_cbg_income_quantile.csv` | Income quartile assignment per device (Florida) |
+| `geo_change_features.gpkg` | CBG-level demographic and mobility features |
+| `GH_poi_list.csv` / `taxonomy.csv` | POI metadata and category taxonomy |
 
 ---
 
