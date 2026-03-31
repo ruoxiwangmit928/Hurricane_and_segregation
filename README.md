@@ -2,7 +2,8 @@
 
 This repository contains the analysis code for the paper:
 
-> **Divergence between residential and experienced social mixing during hurricane displacement**  
+> **[Paper Title]**  
+> [Authors] · [Journal/Conference] · [Year]
 
 We examine how hurricane evacuations reshape income-based social mixing in affected communities, using large-scale mobility data from Hurricane Harvey (Houston, TX, 2017) and Hurricane Ian (Florida, 2022). The analysis covers three main components: (1) evacuation identification, (2) place- and individual-level social mixing computation, and (3) hypothesis testing on host population behavioral responses.
 
@@ -55,7 +56,7 @@ Computes the individual-level counterpart: each person's social mixing score is 
 ### 3 · Host Population Analysis
 
 **`host_population_counterfactual.py`**  
-Identifies the host population — residents who remained in the top 100 most-visited CBGs during the hurricane. Constructs a counterfactual baseline by resampling pre-event POI visits to match the observed dwell-time level each week, stratified by travel distance and income quartile. This isolates behavioral change from composition effects.
+Identifies the host population — residents who remained in the top 100 most-visited CBGs during the hurricane. Constructs counterfactual mobility baselines at three levels of stratification by randomly subsampling pre-event visits to match observed weekly dwell time: (1) total dwell time only; (2) stratified by travel-distance bin × income quartile; (3) further stratified by POI taxonomy category. Each level controls for progressively more confounders to isolate behavioral change from composition effects.
 
 **`tendency_to_explore.py`**  
 Measures the exploration tendency of the host population using the ratio of unique places visited to total visits ($p = S_t / N$). Tracks weekly changes in exploration and travel distance relative to a pre-hurricane baseline (weeks 0–5), and examines whether the post-event change correlates with CBG-level median income.
@@ -87,7 +88,23 @@ Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level ba
 
 ## Data
 
-This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. 
+This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. Intermediate aggregated outputs (e.g., weekly social mixing CSVs) may be available upon reasonable request.
+
+| File | Description |
+|------|-------------|
+| `individual_minimum_distance.txt` | Daily minimum distance from home per device |
+| `device_id_cbg_10_days.csv` | Home CBG assignment per device |
+| `displacement_status.csv` | Daily displacement status (output of Step 1) |
+| `displacement_periods.csv` | Evacuation episode table (output of Step 1) |
+| `evacuees_poi_visits.csv` | POI visit records for identified evacuees |
+| `match_results_remove_home_30/` | Daily POI visit files for all users |
+| `mobility_<week>.txt` | Weekly mobility summaries (rg, distance, visits, dwell time) |
+| `cbg_statistics.csv` | Evacuee inflow counts per CBG |
+| `fl_cbg_income_quantile.csv` | Income quartile assignment per device (Florida) |
+| `geo_change_features.gpkg` | CBG-level demographic and mobility features |
+| `GH_poi_list.csv` / `taxonomy.csv` | POI metadata and category taxonomy |
+
+---
 
 ## Requirements
 
