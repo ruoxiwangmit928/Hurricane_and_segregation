@@ -36,10 +36,6 @@ $$\Delta M_t=100\frac{M_t-M_0}{1-M_0}
 
 Negative values indicate reduced mixing. This is not percentage change relative to baseline $M$. A positive decline outcome, used in the community-income comparison, is $-\Delta M$.
 
-- `2_social_mixing/normalized_social_mixing_change.py` applies the transformation to existing weekly M or S estimates using explicit series keys and baseline periods. It does not change cohorts, infer missing weeks, or reconstruct raw observations.
-- Preserve the original aggregation order. Normalize each CBG before taking cross-CBG means/medians where the analysis uses CBG-specific baselines. For Ian income draws, normalize within each draw before averaging, as implemented in the SI program.
-- Harvey income-assignment robustness retains its saved person-week draw pooling. Its program exports both absolute and normalized temporal results. Individual agreement remains on absolute M.
-- Absolute mixing comparisons, including the location boxplot, remain on M. Dwell time, Encounter Index, Host Shared Ratio, and exploration retain their own definitions; the mixing normalization does not apply to them.
 
 ## Current Ian calculation and original templates
 
