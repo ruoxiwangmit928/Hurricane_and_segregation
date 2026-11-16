@@ -36,17 +36,6 @@ $$\Delta M_t=100\frac{M_t-M_0}{1-M_0}
 
 Negative values indicate reduced mixing. This is not percentage change relative to baseline $M$. A positive decline outcome, used in the community-income comparison, is $-\Delta M$.
 
-
-## Current Ian calculation and original templates
-
-`2_social_mixing/ian_social_mixing.py` is extracted from the executed threshold-sensitivity calculation that generated the current aggregate Ian input. It starts from existing bounded visitation/income tables and prepared cohort labels. The analysis covers twelve weeks beginning August 5, 2022 and ending October 27, with seven pre-event weeks and a fixed September 23–October 10 reference. Its configuration and required upstream tables are documented in the program. An authorized database connection is required.
-
-This aggregate calculation and the separately prepared GE3EVAC inputs used for Ian income-assignment robustness are distinct stages. The SI income program continues to consume the existing assignment-specific exports; the new aggregate entry point does not recreate those assignments.
-
-`place_social_mixing.py` and `individual_social_mixing.py` retain the original absolute-index templates and their original cohort logic. In particular, the original individual template starts on August 19 and uses a monthly activity filter. The current Ian calculation has different eligibility and location filters; changing the original start date alone would not reproduce it. The templates are retained for provenance and should not be presented as the current Ian cohort generator.
-
-Saved current Ian results can be processed locally by the SI programs for recovery, socioeconomic robustness, and community heterogeneity. The original simulation script in `3_host_population/` generates visit samples; it does not by itself calculate or render the final simulated mixing series.
-
 ## Shared locations and the fixed reference
 
 For the Harvey shared/non-shared comparison, count distinct identified evacuees at each location during **August 25–September 7, 2017, inclusive**, using visits inside each person's recorded displacement episode. A shared location has at least **three distinct evacuees**. Repeated visits by one person count once. Non-shared locations may therefore have zero, one, or two evacuees. The classification is fixed across all host-observation weeks.
@@ -56,9 +45,7 @@ The approved main-figure calculations distinguish two reference sets:
 - **Complete-reference overlap (panel b):** both the Encounter Index and Host Shared Ratio retain the complete acute-period evacuee location profile. No three-person filter is imposed on this profile. Weekly host activity uses the original Top-100 host sample.
 - **Shared/non-shared comparisons (panels c–e):** use the three-person classification. Weekly dwell time is the mean total host dwell time per host-active location, with baseline-relative changes using weeks 0–5. The mixing/travel snapshot uses week 9 (September 8–14), the stored `n > 10` mixing filter, absolute M, and travel distances in km. Location-category composition uses week 8 (September 1–7), counts each location once, and retains all classified categories in the denominator.
 
-`4_hypothesis_testing/1_encounter_index.py` and `2_social_mixing_shared_places.py` implement these distinct calculations; `shared_location_reference.py` supplies the common episode/window/distinct-visitor construction. Consult their CLI help for prepared inputs and server-export workflows. Keep the helper alongside both scripts.
-
-In the SI, thresholds 1, 3, 5, and 10 and an extended reference period are sensitivity specifications. There, the Encounter Index profile is restricted and renormalized at each threshold. Those series are not interchangeable with complete-reference main panel b. Figure captions must retain this distinction.
+In the SI, thresholds 1, 3, 5, and 10 and an extended reference period are sensitivity specifications. 
 
 ## Data access and running code
 
