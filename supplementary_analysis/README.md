@@ -60,8 +60,6 @@ The demand proxy combines baseline-expected host visits with observed visits by 
 
 This analysis compares normalized experienced-mixing trajectories for hosts, evacuees, and other visitors in the Top-100 receiving-area analysis. It also evaluates host-mixing sensitivity to the fixed-location visitor threshold and summarizes shared/non-shared activity and overlap trajectories. The combination of measures distinguishes the initial disruption from the subsequent pace of aggregate recovery.
 
-Ian dwell time is measured per host visit, whereas the Harvey shared-location comparison reports mean total dwell time per active location. The original eligible samples are retained for each measure: weekly mixing uses its observed weekly sample, while the aggregate activity and overlap analyses retain their balanced-host construction. These distinctions matter when comparing magnitudes across analyses and hurricanes.
-
 ## 5. Receiving-neighborhood characteristics and local heterogeneity
 
 **Receiving-count models — [receiving_counts.py](community_context/receiving_counts.py)**
