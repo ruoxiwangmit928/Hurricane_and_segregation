@@ -1,5 +1,5 @@
 """
-Place-Level Income Social Mixing During Hurricane Season
+Legacy Place-Level Income Social Mixing
 =========================================================
 Computes weekly place-level income social mixing indices from mobility data,
 using dwell-time-weighted exposure across income quartiles (Q1–Q4).
@@ -8,6 +8,17 @@ Social Mixing Index (adapted from dissimilarity index):
     mixing = 1 - (2/3) * sum_q |share_q - 0.25|
     where share_q = dwell time of quartile q / total dwell time at that place.
     A value of 1 indicates perfect mixing; 0 indicates complete segregation.
+
+This generic absolute-index script is retained for the original workflow.
+The current Ian analysis uses the prepared Florida BOUNDED place-week shares
+through ian_social_mixing.py. It is not reproduced by changing this script's
+dates alone. Keep absolute M for exposure construction and level comparisons;
+normalized_social_mixing_change.py calculates changes after aggregation.
+
+The legacy n/COUNT(*) screens below count visit rows, not distinct people.
+They are separate from the fixed-location threshold of at least three distinct
+evacuees used in the current shared-location analyses. The original numeric
+screen is preserved here rather than silently redefining the sample.
 
 Data source : Cuebiq mobility panel (visit-level records)
 Study period: 2022-08-05 to 2022-10-30 (Florida hurricane season)
@@ -30,7 +41,7 @@ END_DATE   = pd.Timestamp("2022-10-30")
 OUTPUT_DIR = "evac_results/weekly_place_social_mixing"
 INCOME_CSV = "evac_results/fl_cbg_income_quantile.csv"
 
-MIN_VISITORS_PER_PLACE = 4     # minimum unique visitors for a place to be included
+MIN_VISIT_ROWS_PER_PLACE = 4   # legacy COUNT(*) visit-row screen; not distinct visitors
 PLACE_CHUNK_SIZE       = 2000  # batch size for SQL queries
 
 
@@ -92,7 +103,7 @@ for period in pd.period_range(START_DATE, END_DATE - pd.Timedelta(days=1), freq=
     print(f"\nProcessing week: {week_start:%Y-%m-%d} to {week_end:%Y-%m-%d}")
 
     # ------------------------------------------------------------------
-    # 1. Get valid places for this week (minimum visitor threshold)
+    # 1. Get valid places for this week (legacy minimum visit-row threshold)
     # ------------------------------------------------------------------
     place_list = snow_engine.read_sql(f"""
         SELECT PLACE_ID, COUNT(*) AS n
@@ -101,7 +112,7 @@ for period in pd.period_range(START_DATE, END_DATE - pd.Timedelta(days=1), freq=
           AND PROCESSING_DATE <= '{to_ymd(week_end)}'
           AND PLACE_ID IS NOT NULL
         GROUP BY PLACE_ID
-        HAVING COUNT(*) >= {MIN_VISITORS_PER_PLACE}
+        HAVING COUNT(*) >= {MIN_VISIT_ROWS_PER_PLACE}
     """)
     place_ids = place_list["place_id"].tolist()
     print(f"  Valid places: {len(place_ids):,}")
@@ -157,7 +168,7 @@ for period in pd.period_range(START_DATE, END_DATE - pd.Timedelta(days=1), freq=
                     .rename(columns={f"exposure_q{i}": f"q{i}" for i in range(1, 5)})
         )
 
-        n_visitors = df.groupby("place_id").size()
+        n_visit_rows = df.groupby("place_id").size()
 
         out = (
             mat_time.join(shares)
@@ -165,7 +176,7 @@ for period in pd.period_range(START_DATE, END_DATE - pd.Timedelta(days=1), freq=
                         social_mixing_value=compute_social_mixing(
                             shares["q1"], shares["q2"], shares["q3"], shares["q4"]
                         ),
-                        n=n_visitors.reindex(mat_time.index).fillna(0).astype(int),
+                        n=n_visit_rows.reindex(mat_time.index).fillna(0).astype(int),
                         week_start=week_start,
                         week_end=week_end,
                     )

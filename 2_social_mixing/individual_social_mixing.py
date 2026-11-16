@@ -1,5 +1,5 @@
 """
-Individual-Level Income Social Mixing During Hurricane Season
+Legacy Individual-Level Income Social Mixing
 =============================================================
 Computes weekly individual-level income social mixing indices for active users,
 based on the dwell-time-weighted average of place-level income exposure.
@@ -9,7 +9,18 @@ Social Mixing Index (individual):
     where exposure_q = sum_p(w_p * share_qp), weighted by dwell time at each place.
     A value of 1 indicates perfect mixing across income groups; 0 = complete segregation.
 
-Active user criterion: visited places on >= 10 distinct days in every sample month.
+Legacy active-user criterion: >=10 distinct visit days in each month that has
+records in the screening window. Months with no records are not included by
+this original SQL rule. This is not the current Ian strict-stayer definition.
+
+This generic absolute-index script is retained for the original workflow.
+Its August-19 start affects both cohort screening and weekly output. Changing
+only that date would alter eligibility without reproducing the current study.
+For the current Aug-5--Oct-27 Ian analysis, use ian_social_mixing.py, which
+reuses the established labelled cohorts and BOUNDED visitor composition.
+For normalized changes from already aggregated weekly M or S, use
+normalized_social_mixing_change.py. Do not replace the absolute M returned by
+compute_individual_social_mixing with a change rate.
 
 Data source : Cuebiq mobility panel (visit-level records)
 Study period: 2022-08-19 to 2022-10-30 (Florida hurricane season)
@@ -26,13 +37,13 @@ import pandas as pd
 
 # Replace with your own Snowflake table paths
 TABLE         = "YOUR_DATABASE.YOUR_SCHEMA.FL_ALL_VISITS_TARGET_PLACES"
-START_DATE    = pd.Timestamp("2022-08-19")
+START_DATE    = pd.Timestamp("2022-08-19")  # Legacy screen AND output start; deliberately retained
 END_DATE      = pd.Timestamp("2022-10-30")
 PLACE_OUT_DIR = "evac_results/weekly_place_social_mixing"
 OUTPUT_DIR    = "evac_results/weekly_individual_social_mixing"
 
 MIN_ACTIVE_DAYS  = 10   # minimum visit days per month to be considered an active user
-MIN_PLACE_VISITS = 4    # minimum visitors per place (inherited from place-level filter)
+MIN_PLACE_VISITS = 4    # minimum income-matched visit rows in legacy place output n
 PLACE_CHUNK_SIZE = 500  # batch size for SQL queries
 
 

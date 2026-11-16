@@ -1,162 +1,73 @@
-# Hurricane Evacuation and Income Social Mixing
+# Hurricane displacement and income-based social mixing
 
-This repository contains the analysis code for the paper:
+Analysis code for *Divergence between residential and experienced social mixing during hurricane displacement*, covering Hurricane Harvey (2017) and Hurricane Ian (2022).
 
-> **Divergence between residential and experienced social mixing during hurricane displacement**  
-> [Authors] · [Journal/Conference] · [Year]
+Programs start from the data stages described in their docstrings. Raw mobility data and private intermediate tables are not distributed. This repository does not provide a single raw-GPS-to-final-results command.
 
-We examine how hurricane evacuations reshape income-based social mixing in affected communities, using large-scale mobility data from Hurricane Harvey (Houston, TX, 2017) and Hurricane Ian (Florida, 2022). The analysis covers three main components: (1) evacuation identification, (2) place- and individual-level social mixing computation, and (3) hypothesis testing on host population behavioral responses.
+## Analysis structure
 
----
+| Directory | Purpose |
+|---|---|
+| `1_evacuation_identification/` | Original displacement-identification code |
+| `2_social_mixing/` | Absolute mixing measures, current Ian aggregate calculation, and downstream normalized changes |
+| `3_host_population/` | Original simulation visit generation and place-exploration analysis |
+| `4_hypothesis_testing/` | Fixed-reference overlap, host activity, and shared/non-shared location comparisons |
+| `supplementary_analysis/` | Identification sensitivity, measurement robustness, shared-location sensitivity, recovery, and community context |
 
-## Repository Structure
+See [the supplementary analysis guide](supplementary_analysis/README.md) for its topic-based program list. Run current command-line entry points with `--help` for arguments and input schemas. Original scripts requiring an existing database connection are explicitly identified as such.
 
-```
-.
-├── 1_evacuation_identification/
-│   └── evacuation_identification.py
-│
-├── 2_social_mixing/
-│   ├── place_social_mixing.py
-│   └── individual_social_mixing.py
-│
-├── 3_host_population/
-│   ├── host_population_counterfactual.py
-│   └── tendency_to_explore.py
-│
-├── 4_hypothesis_testing/
-│   ├── 1_encounter_index.py
-│   └── 2_social_mixing_shared_places.py
-│
-├── data/                  # input data (not included — see Data section)
-├── results/               # generated outputs
-└── README.md
-```
+## Mixing levels and normalized changes
 
----
+For four income groups, place-level mixing is
 
-## Module Overview
+$$M_{\alpha}=1-\frac{2}{3}\sum_q\left|\tau_{q\alpha}-\frac14\right|,$$
 
-### 1 · Evacuation Identification
-**`evacuation_identification.py`**  
-Identifies evacuation episodes from daily GPS displacement traces using a rolling threshold. An individual is classified as evacuated if their minimum distance from home exceeds `DISPLACEMENT_THRESHOLD` (default 1000 m) for ≥ 3 consecutive days, and as returned when they remain near home for ≥ 3 consecutive days. The pre-event window (Aug 10–20) is used to confirm baseline home location. Outputs a daily displacement status file and an episode-level table (start date, end date, duration).
+where $\tau_{q\alpha}$ is the income group's share of total dwell time at that location. Individual exposure first combines the income shares of visited locations using the individual's dwell-time weights:
 
-### 2 · Social Mixing Computation
+$$\tau_{iq}=\sum_{\alpha}\tau_{i\alpha}\tau_{q\alpha}, \qquad
+M_i=1-\frac{2}{3}\sum_q\left|\tau_{iq}-\frac14\right|.$$
 
-**`place_social_mixing.py`**  
-Computes weekly place-level income social mixing for all visited POIs (Florida, Hurricane Ian 2022). Visitors are weighted by dwell time.
+Both are absolute indices, $M=1-S$, ranging from 0 to 1. Individual mixing is calculated from weighted exposure shares, not by averaging place mixing indices. These indices describe potential socioeconomic exposure, not directly observed interpersonal interaction.
 
-**`individual_social_mixing.py`**  
-Computes the individual-level counterpart: each person's social mixing score is the dwell-time-weighted average of the place-level income exposure across all their visited POIs in a given week. Only active users (≥ 10 visit days per month) are included.
+Time trajectories expressed as **normalized mixing change** use
 
-### 3 · Host Population Analysis
+$$\Delta M_t=100\frac{M_t-M_0}{1-M_0}
+=-100\frac{S_t-S_0}{S_0}.$$
 
-**`host_population_counterfactual.py`**  
-Identifies the host population — residents who remained in the top 100 most-visited CBGs during the hurricane. Constructs counterfactual mobility baselines at three levels of stratification by randomly subsampling pre-event visits to match observed weekly dwell time: (1) total dwell time only; (2) stratified by travel-distance bin × income quartile; (3) further stratified by POI taxonomy category. Each level controls for progressively more confounders to isolate behavioral change from composition effects.
+Negative values indicate reduced mixing. This is not percentage change relative to baseline $M$. A positive decline outcome, used in the community-income comparison, is $-\Delta M$.
 
-**`tendency_to_explore.py`**  
-Measures the exploration tendency of the host population using the ratio of unique places visited to total visits ($p = S_t / N$). Tracks weekly changes in exploration and travel distance relative to a pre-hurricane baseline (weeks 0–5), and examines whether the post-event change correlates with CBG-level median income.
+- `2_social_mixing/normalized_social_mixing_change.py` applies the transformation to existing weekly M or S estimates using explicit series keys and baseline periods. It does not change cohorts, infer missing weeks, or reconstruct raw observations.
+- Preserve the original aggregation order. Normalize each CBG before taking cross-CBG means/medians where the analysis uses CBG-specific baselines. For Ian income draws, normalize within each draw before averaging, as implemented in the SI program.
+- Harvey income-assignment robustness retains its saved person-week draw pooling. Its program exports both absolute and normalized temporal results. Individual agreement remains on absolute M.
+- Absolute mixing comparisons, including the location boxplot, remain on M. Dwell time, Encounter Index, Host Shared Ratio, and exploration retain their own definitions; the mixing normalization does not apply to them.
 
-### 4 · Hypothesis Testing
+## Current Ian calculation and original templates
 
-**`hypothesis_1_encounter_index.py`**  
-Tests whether evacuees and the host population co-visited the same POIs during the hurricane period. Computes two metrics weekly: an *Encounter Index* (dwell-time-weighted co-presence at shared POIs) and a *Host Shared Ratio* (fraction of host dwell time at evacuee-visited places). Also compares dwell-time change rates at evacuee-shared vs non-shared POIs.
+`2_social_mixing/ian_social_mixing.py` is extracted from the executed threshold-sensitivity calculation that generated the current aggregate Ian input. It starts from existing bounded visitation/income tables and prepared cohort labels. The analysis covers twelve weeks beginning August 5, 2022 and ending October 27, with seven pre-event weeks and a fixed September 23–October 10 reference. Its configuration and required upstream tables are documented in the program. An authorized database connection is required.
 
-**`hypothesis_2_social_mixing_shared_places.py`**  
-Tests whether places visited by evacuees exhibit higher income social mixing than non-visited places. Produces a snapshot boxplot for the hurricane week, a weekly trend comparison, and a POI taxonomy breakdown of shared vs non-shared places.
+This aggregate calculation and the separately prepared GE3EVAC inputs used for Ian income-assignment robustness are distinct stages. The SI income program continues to consume the existing assignment-specific exports; the new aggregate entry point does not recreate those assignments.
 
----
+`place_social_mixing.py` and `individual_social_mixing.py` retain the original absolute-index templates and their original cohort logic. In particular, the original individual template starts on August 19 and uses a monthly activity filter. The current Ian calculation has different eligibility and location filters; changing the original start date alone would not reproduce it. The templates are retained for provenance and should not be presented as the current Ian cohort generator.
 
-## Social Mixing Index
+Saved current Ian results can be processed locally by the SI programs for recovery, socioeconomic robustness, and community heterogeneity. The original simulation script in `3_host_population/` generates visit samples; it does not by itself calculate or render the final simulated mixing series.
 
-Following established exposure-based measures (Moro et al. 2021; Yabe et al. 2023), we define social mixing at two levels.
+## Shared locations and the fixed reference
 
-**Place-level social mixing.** The social mixing of encounters at place $\alpha$ is:
+For the Harvey shared/non-shared comparison, count distinct identified evacuees at each location during **August 25–September 7, 2017, inclusive**, using visits inside each person's recorded displacement episode. A shared location has at least **three distinct evacuees**. Repeated visits by one person count once. Non-shared locations may therefore have zero, one, or two evacuees. The classification is fixed across all host-observation weeks.
 
-$$M_{\alpha} = 1 - \frac{2}{3} \sum_q \left| \tau_{q\alpha} - \frac{1}{4} \right|$$
+The approved main-figure calculations distinguish two reference sets:
 
-where $\tau_{q\alpha}$ is the share of total dwell time at place $\alpha$ attributable to income quartile $q$. $M_{\alpha} = 0$ indicates that all encounters involve individuals from a single income quartile; $M_{\alpha} = 1$ indicates perfectly balanced exposure across all four groups.
+- **Complete-reference overlap (panel b):** both the Encounter Index and Host Shared Ratio retain the complete acute-period evacuee location profile. No three-person filter is imposed on this profile. Weekly host activity uses the original Top-100 host sample.
+- **Shared/non-shared comparisons (panels c–e):** use the three-person classification. Weekly dwell time is the mean total host dwell time per host-active location, with baseline-relative changes using weeks 0–5. The mixing/travel snapshot uses week 9 (September 8–14), the stored `n > 10` mixing filter, absolute M, and travel distances in km. Location-category composition uses week 8 (September 1–7), counts each location once, and retains all classified categories in the denominator.
 
-**Individual-level social mixing.** Each individual's exposure to income quartile $q$ is computed as a dwell-time-weighted average of place-level income shares across all visited places:
+`4_hypothesis_testing/1_encounter_index.py` and `2_social_mixing_shared_places.py` implement these distinct calculations; `shared_location_reference.py` supplies the common episode/window/distinct-visitor construction. Consult their CLI help for prepared inputs and server-export workflows. Keep the helper alongside both scripts.
 
-$$\tau_{iq} = \sum_{\alpha} \tau_{i\alpha} \, \tau_{q\alpha}$$
+In the SI, thresholds 1, 3, 5, and 10 and an extended reference period are sensitivity specifications. There, the Encounter Index profile is restricted and renormalized at each threshold. Those series are not interchangeable with complete-reference main panel b. Figure captions must retain this distinction.
 
-where $\tau_{i\alpha}$ is the proportion of individual $i$'s total dwell time spent at place $\alpha$. The experienced social mixing of individual $i$ is then:
+## Data access and running code
 
-$$M_i = 1 - \frac{2}{3} \sum_q \left| \tau_{iq} - \frac{1}{4} \right|$$
+The mobility data were provided by Cuebiq under licence and are not publicly distributed. Use authorized local files or database tables and write generated outputs outside the source tree. No access credentials are supplied.
 
-Income quartiles (Q1–Q4) are assigned at the Census Block Group (CBG) level based on ACS median household income.
+Use Python 3.10 or newer for the revised entry points. Core local analyses require `numpy`, `pandas`, `matplotlib`, `scipy`, `statsmodels`, and `patsy`; original geographic scripts additionally use packages such as `geopandas`, `haversine`, and `mapclassify`. See [SI requirements](supplementary_analysis/requirements.txt). Original plotting templates may require `seaborn`.
 
----
-
-## Data
-
-This study uses **Cuebiq** GPS mobility data under a Data for Good research agreement. The raw mobility data cannot be shared publicly. 
-
----
-
-## Requirements
-
-```
-python >= 3.8
-pandas
-numpy
-geopandas
-matplotlib
-seaborn
-scipy
-statsmodels
-haversine
-mapclassify
-```
-
-Install dependencies:
-
-```bash
-pip install pandas numpy geopandas matplotlib seaborn scipy statsmodels haversine mapclassify
-```
-
-The scripts in `2_social_mixing/` additionally require a **Snowflake** connection via `cuebiq` internal tooling. Update the database paths in the configuration block before running:
-
-```python
-TABLE              = "YOUR_DATABASE.YOUR_SCHEMA.FL_ALL_VISITS_TARGET_PLACES"
-ACTIVE_USERS_TABLE = "YOUR_DATABASE.YOUR_SCHEMA.FL_ACTIVE_USERS"
-```
-
-All other scripts read from local files. Update the path constants at the top of each file to match your local directory layout.
-
----
-
-## Module Summary
-
-| Folder | Script | Description |
-|--------|--------|-------------|
-| `1_evacuation_identification` | `evacuation_identification.py` | Identifies evacuees from GPS traces using a displacement threshold |
-| `2_social_mixing` | `place_social_mixing.py` | Weekly place-level social mixing (Florida / Hurricane Ian) |
-| `2_social_mixing` | `individual_social_mixing.py` | Weekly individual-level social mixing for active users |
-| `3_host_population` | `host_population_counterfactual.py` | Identifies host population and builds a counterfactual dwell-time baseline |
-| `3_host_population` | `tendency_to_explore.py` | Tracks weekly exploration and dwell-time changes for the host population |
-| `4_hypothesis_testing` | `1_encounter_index.py` | Computes evacuee–host co-presence metrics at shared POIs |
-| `4_hypothesis_testing` | `2_social_mixing_shared_places.py` | Compares social mixing at evacuee-visited vs non-visited places |
-
----
-
-## Citation
-
-If you use this code, please cite:
-
-```bibtex
-@article{[citekey],
-  title   = {[Paper Title]},
-  author  = {[Authors]},
-  journal = {[Journal]},
-  year    = {[Year]},
-  doi     = {[DOI]}
-}
-```
-
----
-
-## License
-
-This repository is released under the [MIT License](LICENSE).
+Platform entry points accept a user-supplied authorized engine; they do not establish data access. The original absolute-index templates require an initialized `snow_engine` and configured table paths. Keep observed values, sample exclusions, reference metadata, and aggregate audits together when regenerating results.

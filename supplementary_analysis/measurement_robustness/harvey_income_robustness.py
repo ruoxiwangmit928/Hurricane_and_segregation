@@ -5,6 +5,17 @@ Pool 20 assignment draws within each person-week; compare M=1-S levels,
 matched agreement and the lower-within-CBG-variation subset. Outputs are
 aggregate summaries and plots, not device records. This file does not create
 new ACS/B19001 income assignments.
+
+Temporal changes additionally use 100*(M-M0)/(1-M0), with each method's
+weeks 0--5 mean as M0. This normalization follows the existing pooling of
+draws within person-week and aggregation across observed hosts; it does not
+change the fixed sample or the absolute-M individual agreement analysis.
+
+To add normalized temporal outputs from an existing weekly export without
+rereading the individual file:
+    python harvey_income_robustness.py --weekly weekly_social_mixing.csv \
+        --output normalized_results
+This --weekly mode does not rerun or replace individual agreement results.
 """
 from pathlib import Path
 import argparse
@@ -15,6 +26,74 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+
+
+def normalized_weekly_outputs(weekly, output):
+    """Add normalized trajectories to the original saved method-week means."""
+    output = Path(output)
+    required = {'label', 'week', 'mean_social_mixing'}
+    if not required.issubset(weekly.columns):
+        raise ValueError(f'Missing columns: {sorted(required-set(weekly.columns))}')
+    out = weekly.copy()
+    if out[list(required)].isna().any().any() or out.duplicated(['label', 'week']).any():
+        raise ValueError('Expected one nonmissing mean for each method and week')
+    if not np.isfinite(out.mean_social_mixing).all() or not out.mean_social_mixing.between(0,1).all():
+        raise ValueError('Mixing levels must be finite and in [0,1]')
+    style={
+        'median_q4':('Original: median + quartiles','#222222','o'),
+        'median_q3':('Median + tertiles','#2B79B2','s'),
+        'median_q5':('Median + quintiles','#EE861B','^'),
+        'official_mean_q4':('ACS mean + quartiles','#EE861B','s'),
+        'uniform_bin_q4':('B19001 uniform-bin (20 draws)','#27875B','^'),
+        'lognormal_q4':('B19001 log-normal (20 draws)','#2B79B2','D'),
+        'median_q4_lowvar50':('Below-median within-CBG income variation','#2B79B2','s'),
+    }
+    if set(out.label) != set(style):
+        raise ValueError('Expected all seven original socioeconomic specifications')
+    rows=[]
+    for label, g in out.groupby('label', sort=False):
+        if set(g.week) != set(range(12)):
+            raise ValueError(f'Expected all 12 weeks for {label}')
+        baseline=g.loc[g.week.between(0,5), 'mean_social_mixing'].mean()
+        if not 0 <= baseline < 1:
+            raise ValueError(f'Undefined normalized mixing change for {label}: M0={baseline}')
+        out.loc[g.index, 'baseline_mixing_weeks0_5']=baseline
+        out.loc[g.index, 'normalized_change_percent']=100*(g.mean_social_mixing-baseline)/(1-baseline)
+        rows.append(dict(label=label,baseline_mixing_weeks0_5=baseline,
+            week7_normalized_change_percent=100*(g.loc[g.week.eq(7), 'mean_social_mixing'].iloc[0]-baseline)/(1-baseline),
+            weeks8_11_mean_normalized_change_percent=100*(g.loc[g.week.between(8,11), 'mean_social_mixing'].mean()-baseline)/(1-baseline)))
+    np.testing.assert_allclose(out.normalized_change_percent,
+        -100*((1-out.mean_social_mixing)-(1-out.baseline_mixing_weeks0_5))/(1-out.baseline_mixing_weeks0_5),atol=1e-10)
+    for directory in [output/'tables', output/'figures']:
+        directory.mkdir(parents=True,exist_ok=True)
+    out.to_csv(output/'tables/weekly_normalized_social_mixing.csv',index=False)
+    pd.DataFrame(rows).to_csv(output/'tables/period_normalized_change_summary.csv',index=False)
+    panels=[('A  SES quantile cutoffs',['median_q4','median_q3','median_q5']),
+            ('B  Income measure / assignment',['median_q4','official_mean_q4','uniform_bin_q4','lognormal_q4']),
+            ('C  Low within-CBG income variation',['median_q4','median_q4_lowvar50'])]
+    fig,axes=plt.subplots(1,3,figsize=(16.5,5.1),layout='constrained')
+    for ax,(title,methods) in zip(axes,panels):
+        for label in methods:
+            g=out.loc[out.label.eq(label)].sort_values('week')
+            name,color,marker=style[label]
+            ax.plot(g.week,g.normalized_change_percent,label=name,color=color,marker=marker,ms=4,
+                    lw=2.2 if label=='median_q4' else 1.6)
+        ax.axvspan(7,8,color='#F5D36C',alpha=.2,zorder=0)
+        ax.axhline(0,color='0.6',linestyle='--',linewidth=.8)
+        ax.set(title=title,xlabel='Study week',ylabel='Normalized mixing change (%)',xticks=range(12))
+        ax.spines[['top','right']].set_visible(False)
+        ax.legend(frameon=False,fontsize=8.8,loc='lower center',bbox_to_anchor=(.5,1.01),borderaxespad=1.1)
+        ax.set_title(title,pad=80,fontsize=11)
+    for ext in ['png','pdf']:
+        fig.savefig(output/f'figures/income_robustness_normalized_change.{ext}',dpi=300)
+    plt.close(fig)
+    audit=dict(formula='100*(M-M0)/(1-M0)',baseline_weeks=list(range(6)),
+        baseline_weighting='equal weekly means separately within each method',
+        temporal_input='existing weekly M after original within-person draw pooling',
+        sample_and_absolute_values_changed=False,individual_agreement_normalized=False,
+        normalized_rows=len(out),methods=len(style))
+    (output/'temporal_normalization_audit.json').write_text(json.dumps(audit,indent=2)+'\n')
+    return out
 
 
 def run(data, output):
@@ -180,6 +259,9 @@ def run(data, output):
     for ext in ['png','pdf']:fig.savefig(OUT/f'figures/income_robustness_weekly_mixing.{ext}',dpi=300)
     plt.close(fig)
 
+    # Keep the absolute plot above; add the revised temporal measure separately.
+    normalized_weekly_outputs(weekly, OUT)
+
     titles={
         'median_q3':'Median + tertiles','median_q5':'Median + quintiles',
         'official_mean_q4':'ACS mean + quartiles',
@@ -231,7 +313,8 @@ def run(data, output):
                unique_draw_keys=True,draws_complete=True,fixed_unrestricted_support_verified=True,
                restricted_sample_is_subset=True,
                transform='M_it = 1-S_it, absolute index; average 20 draws within each host-week before weekly aggregation or matching.',
-               source_method_preserved='No IQR, trimming, baseline normalization, zero-baseline exclusion, or new income assignments.',
+               source_method_preserved='No IQR, trimming, sample exclusion, or new income assignments. Absolute agreement is unchanged.',
+               temporal_normalization='Additional output: 100*(M-M0)/(1-M0), using each method\'s weeks 0--5 mean after original draw pooling.',
                agreement_plot_source='Freshly read source CSV; paired unrounded host-week values; not traced or copied from an image.',
                agreement_plot_hexbin_totals=hexbin_totals,
                agreement_plot_layout='Three panels above and two centered below; shared labels and external common colour bar. MAD retained in numeric table and response caption.',
@@ -250,11 +333,18 @@ def run(data, output):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data',type=Path,required=True,
+    source=parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--data',type=Path,
                         help='Saved fixed-support individual estimates; restricted input')
+    source.add_argument('--weekly',type=Path,
+                        help='Existing weekly_social_mixing.csv; add temporal normalization only')
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
-    run(args.data,args.output)
+    if args.weekly:
+        normalized_weekly_outputs(pd.read_csv(args.weekly),args.output)
+        print(f'Saved normalized temporal outputs to {args.output}; individual agreement not rerun')
+    else:
+        run(args.data,args.output)
 
 
 if __name__=='__main__':

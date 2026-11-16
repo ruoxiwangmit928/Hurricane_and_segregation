@@ -46,14 +46,16 @@ The Top-100 roster defines the cohort. Left joins retain its 100 members before 
 ## Data stages
 
 - **Identification:** the Harvey program starts from stored displacement spells, pre-event homes and nighttime stays. It does not recreate spells from GPS pings. The Ian program starts from an existing standardized daily home-trajectory table and original candidate table. It accepts an authorized engine through `run(...)` or `--engine-factory module:function`; its four derived SQL output tables use an explicit `--result-prefix`. It does not initialize platform access or store credentials.
-- **Income robustness:** Harvey starts from the saved fixed-support individual estimates; Ian starts from saved weekly estimates for each assignment. These programs analyze existing assignments, rather than recreating the upstream income-imputation pipeline.
+- **Income robustness:** Harvey starts from the saved fixed-support individual estimates; its `--weekly` mode can add normalized temporal curves from an existing `weekly_social_mixing.csv` without rereading individual records. The original absolute-level and agreement results are retained. Ian starts from saved weekly estimates for each assignment. These programs analyze existing assignments, rather than recreating the upstream income-imputation pipeline.
 - **Shared-location construction:** requires prepared evacuee visit rows covering August 25–September 28 and all twelve weekly host–location dwell tables. The sensitivity program consumes the six aggregate CSVs produced by that construction. It can also read the existing six-table export.
 - **Demand pressure:** requires the saved, balanced, baseline-selected location-week panel with verified displacement/return timing. It does not recreate the original host cohort or daily visit panel.
 - **Community models:** require prepared CBG covariates, original sample membership and/or saved CBG-week summaries. The programs never infer missing outcomes from figures or fill them with invented data.
 
 ## Measures and samples
 
-Mixing changes use `100*(M-M0)/(1-M0)`, with `M=1-S`, where the current analysis calls for normalized mixing change. Absolute-level income agreement remains on M. Dwell time, Encounter Index and Host Shared Ratio keep their own metric-specific baseline changes.
+Mixing changes use `100*(M-M0)/(1-M0)`, with `M=1-S`, where the current analysis calls for normalized mixing change. Harvey income robustness uses each method's weeks 0–5 mean after its original person-week draw pooling; it now exports a separate normalized time-series figure and table. Absolute-level income agreement remains on M. Dwell time, Encounter Index and Host Shared Ratio keep their own metric-specific baseline changes.
+
+The main-analysis [`normalized_social_mixing_change.py`](../2_social_mixing/normalized_social_mixing_change.py) provides the same formula for other prepared weekly M/S series. The current Ian aggregate SQL entry point is [`ian_social_mixing.py`](../2_social_mixing/ian_social_mixing.py); its prepared bounded tables differ from the separate GE3EVAC inputs used for income-assignment robustness.
 
 The Ian local-recovery comparison uses the Top-100 host subset of the original Top-200 measurement universe. Fixed location profiles and visitor composition are retained, yielding the existing 12/88 groups. Receiving-count regressions use distinct observed arrivals; the separate environmental-adjustment analysis retains the original peak-net population outcome. These are distinct analyses.
 
