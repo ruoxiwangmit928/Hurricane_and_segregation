@@ -1,0 +1,9 @@
+numpy
+pandas
+scipy
+statsmodels
+patsy
+matplotlib
+# Required for Harvey nighttime-location spatial matching:
+geopandas
+# Ian platform analysis uses your existing authorized engine/client environment.
